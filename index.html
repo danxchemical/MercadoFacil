@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MercadoFácil - Sistema POS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: calc(100vh - 40px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.1) 10px,
+                rgba(255,255,255,0.1) 20px
+            );
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            padding: 30px;
+            min-height: 600px;
+        }
+
+        .products-section {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .categories {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .category-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .category-btn.active {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-color: #4facfe;
+        }
+
+        .product-card:hover::before {
+            left: 100%;
+        }
+
+        .product-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .product-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .product-price {
+            color: #38a169;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .cart-section {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cart-header {
+            background: linear-gradient(135deg, #38a169 0%, #2d7a3d 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .cart-items {
+            flex: 1;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid #4facfe;
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .cart-item-price {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 15px;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            background: #4facfe;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .qty-btn:hover {
+            background: #0090ff;
+            transform: scale(1.1);
+        }
+
+        .quantity {
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .remove-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .remove-btn:hover {
+            background: #c53030;
+            transform: scale(1.05);
+        }
+
+        .cart-summary {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #e2e8f0;
+            padding-top: 15px;
+            margin-top: 15px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #2d3748;
+        }
+
+        .discount-section {
+            margin-bottom: 20px;
+        }
+
+        .discount-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .discount-input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .apply-discount-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .apply-discount-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .checkout-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-cart {
+            text-align: center;
+            color: #718096;
+            padding: 40px 20px;
+        }
+
+        .empty-cart-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #48bb78;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            font-weight: 600;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 MercadoFácil</h1>
+            <p>Sistema de Punto de Venta Intuitivo para Comercios Minoristas</p>
+        </div>
+
+        <div class="main-content">
+            <div class="products-section">
+                <div class="categories">
+                    <button class="category-btn active" data-category="all">Todos</button>
+                    <button class="category-btn" data-category="bebidas">🥤 Bebidas</button>
+                    <button class="category-btn" data-category="galletas">🍪 Galletas</button>
+                    <button class="category-btn" data-category="lacteos">🥛 Lácteos</button>
+                    <button class="category-btn" data-category="snacks">🍿 Snacks</button>
+                    <button class="category-btn" data-category="limpieza">🧽 Limpieza</button>
+                </div>
+
+                <div class="products-grid" id="productsGrid">
+                    <!-- Los productos se generarán dinámicamente -->
+                </div>
+            </div>
+
+            <div class="cart-section">
+                <div class="cart-header">
+                    🛍️ Carrito de Compras
+                </div>
+
+                <div class="cart-items" id="cartItems">
+                    <div class="empty-cart">
+                        <div class="empty-cart-icon">🛒</div>
+                        <p>El carrito está vacío</p>
+                        <p>Agrega productos para comenzar</p>
+                    </div>
+                </div>
+
+                <div class="discount-section">
+                    <input type="number" class="discount-input" id="discountInput" placeholder="Descuento (%)" min="0" max="100">
+                    <button class="apply-discount-btn" onclick="applyDiscount()">Aplicar Descuento</button>
+                </div>
+
+                <div class="cart-summary" id="cartSummary" style="display: none;">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Descuento:</span>
+                        <span id="discount">$0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>IVA (19%):</span>
+                        <span id="tax">$0</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="total">$0</span>
+                    </div>
+                </div>
+
+                <button class="checkout-btn" id="checkoutBtn" onclick="checkout()" disabled>
+                    Procesar Venta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Base de datos de productos por categorías
+        const products = {
+            bebidas: [
+                { id: 1, name: "Coca Cola 350ml", price: 2500, icon: "🥤", category: "bebidas" },
+                { id: 2, name: "Agua Cristal 500ml", price: 1500, icon: "💧", category: "bebidas" },
+                { id: 3, name: "Jugo Hit 200ml", price: 2000, icon: "🧃", category: "bebidas" },
+                { id: 4, name: "Cerveza Águila 355ml", price: 3500, icon: "🍺", category: "bebidas" },
+                { id: 5, name: "Gatorade 500ml", price: 4000, icon: "⚡", category: "bebidas" }
+            ],
+            galletas: [
+                { id: 6, name: "Oreo Original", price: 3000, icon: "🍪", category: "galletas" },
+                { id: 7, name: "Festival Chocolate", price: 2500, icon: "🍫", category: "galletas" },
+                { id: 8, name: "Ducales Saladas", price: 2800, icon: "🧈", category: "galletas" },
+                { id: 9, name: "Chocorramo", price: 2000, icon: "🍰", category: "galletas" },
+                { id: 10, name: "Wafer Jet", price: 1800, icon: "🥧", category: "galletas" }
+            ],
+            lacteos: [
+                { id: 11, name: "Leche Alquería 1L", price: 4500, icon: "🥛", category: "lacteos" },
+                { id: 12, name: "Yogurt Alpina 200g", price: 3200, icon: "🍶", category: "lacteos" },
+                { id: 13, name: "Queso Campesino", price: 8000, icon: "🧀", category: "lacteos" },
+                { id: 14, name: "Mantequilla 250g", price: 5500, icon: "🧈", category: "lacteos" },
+                { id: 15, name: "Kumis Alpina 1L", price: 5000, icon: "🥤", category: "lacteos" }
+            ],
+            snacks: [
+                { id: 16, name: "Papas Margarita", price: 2200, icon: "🍟", category: "snacks" },
+                { id: 17, name: "Cheetos 45g", price: 2000, icon: "🌽", category: "snacks" },
+                { id: 18, name: "Maní Salado", price: 1500, icon: "🥜", category: "snacks" },
+                { id: 19, name: "Doritos 150g", price: 4500, icon: "🔺", category: "snacks" },
+                { id: 20, name: "Platanitos", price: 1800, icon: "🍌", category: "snacks" }
+            ],
+            limpieza: [
+                { id: 21, name: "Detergente Fab 1kg", price: 12000, icon: "🧽", category: "limpieza" },
+                { id: 22, name: "Jabón Rey 300g", price: 3500, icon: "🧼", category: "limpieza" },
+                { id: 23, name: "Shampoo Head&Shoulders", price: 15000, icon: "🧴", category: "limpieza" },
+                { id: 24, name: "Papel Higiénico x4", price: 8500, icon: "🧻", category: "limpieza" },
+                { id: 25, name: "Crema Dental Colgate", price: 6500, icon: "🦷", category: "limpieza" }
+            ]
+        };
+
+        let cart = [];
+        let currentDiscount = 0;
+        let allProducts = [];
+
+        // Combinar todos los productos en un array
+        Object.values(products).forEach(category => {
+            allProducts = [...allProducts, ...category];
+        });
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            displayProducts('all');
+            updateCartDisplay();
+            setupCategoryButtons();
+        });
+
+        // Configurar botones de categorías
+        function setupCategoryButtons() {
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            categoryButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remover clase active de todos los botones
+                    categoryButtons.forEach(b => b.classList.remove('active'));
+                    // Agregar clase active al botón clickeado
+                    this.classList.add('active');
+                    // Mostrar productos de la categoría
+                    displayProducts(this.dataset.category);
+                });
+            });
+        }
+
+        // Mostrar productos según categoría
+        function displayProducts(category) {
+            const grid = document.getElementById('productsGrid');
+            let productsToShow = [];
+
+            if (category === 'all') {
+                productsToShow = allProducts;
+            } else {
+                productsToShow = products[category] || [];
+            }
+
+            grid.innerHTML = '';
+
+            productsToShow.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <div class="product-icon">${product.icon}</div>
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-price">$${product.price.toLocaleString()}</div>
+                `;
+                
+                productCard.addEventListener('click', () => addToCart(product));
+                grid.appendChild(productCard);
+            });
+        }
+
+        // Agregar producto al carrito
+        function addToCart(product) {
+            const existingItem = cart.find(item => item.id === product.id);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    ...product,
+                    quantity: 1
+                });
+            }
+
+            updateCartDisplay();
+            showNotification(`${product.name} agregado al carrito`);
+        }
+
+        // Actualizar visualización del carrito
+        function updateCartDisplay() {
+            const cartItems = document.getElementById('cartItems');
+            const cartSummary = document.getElementById('cartSummary');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+
+            if (cart.length === 0) {
+                cartItems.innerHTML = `
+                    <div class="empty-cart">
+                        <div class="empty-cart-icon">🛒</div>
+                        <p>El carrito está vacío</p>
+                        <p>Agrega productos para comenzar</p>
+                    </div>
+                `;
+                cartSummary.style.display = 'none';
+                checkoutBtn.disabled = true;
+                return;
+            }
+
+            cartItems.innerHTML = '';
+            cart.forEach(item => {
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                cartItem.innerHTML = `
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.icon} ${item.name}</div>
+                        <div class="cart-item-price">$${item.price.toLocaleString()} c/u</div>
+                    </div>
+                    <div class="quantity-controls">
+                        <button class="qty-btn" onclick="changeQuantity(${item.id}, -1)">-</button>
+                        <span class="quantity">${item.quantity}</span>
+                        <button class="qty-btn" onclick="changeQuantity(${item.id}, 1)">+</button>
+                    </div>
+                    <button class="remove-btn" onclick="removeFromCart(${item.id})">×</button>
+                `;
+                cartItems.appendChild(cartItem);
+            });
+
+            updateCartSummary();
+            cartSummary.style.display = 'block';
+            checkoutBtn.disabled = false;
+        }
+
+        // Cambiar cantidad de producto
+        function changeQuantity(productId, delta) {
+            const item = cart.find(item => item.id === productId);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    removeFromCart(productId);
+                } else {
+                    updateCartDisplay();
+                }
+            }
+        }
+
+        // Remover producto del carrito
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCartDisplay();
+        }
+
+        // Actualizar resumen del carrito
+        function updateCartSummary() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const discountAmount = subtotal * (currentDiscount / 100);
+            const subtotalAfterDiscount = subtotal - discountAmount;
+            const tax = subtotalAfterDiscount * 0.19; // IVA 19%
+            const total = subtotalAfterDiscount + tax;
+
+            document.getElementById('subtotal').textContent = `$${subtotal.toLocaleString()}`;
+            document.getElementById('discount').textContent = `-$${discountAmount.toLocaleString()}`;
+            document.getElementById('tax').textContent = `$${tax.toLocaleString()}`;
+            document.getElementById('total').textContent = `$${Math.round(total).toLocaleString()}`;
+        }
+
+        // Aplicar descuento
+        function applyDiscount() {
+            const discountInput = document.getElementById('discountInput');
+            const discount = parseFloat(discountInput.value) || 0;
+            
+            if (discount < 0 || discount > 100) {
+                showNotification('El descuento debe estar entre 0% y 100%', 'error');
+                return;
+            }
+
+            currentDiscount = discount;
+            updateCartSummary();
+            showNotification(`Descuento del ${discount}% aplicado`);
+        }
+
+        // Procesar venta
+        function checkout() {
+            if (cart.length === 0) return;
+
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const discountAmount = subtotal * (currentDiscount / 100);
+            const subtotalAfterDiscount = subtotal - discountAmount;
+            const tax = subtotalAfterDiscount * 0.19;
+            const total = Math.round(subtotalAfterDiscount + tax);
+
+            // Simular impresión de ticket
+            let ticket = `
+=================================
+       MERCADOFÁCIL
+   Sistema POS Intuitivo
+=================================
+
+Fecha: ${new Date().toLocaleString()}
+
+---------------------------------
+PRODUCTOS:
+`;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                ticket += `${item.name}\n`;
+                ticket += `${item.quantity} x $${item.price.toLocaleString()} = $${itemTotal.toLocaleString()}\n\n`;
+            });
+
+            ticket += `---------------------------------
+Subtotal: $${subtotal.toLocaleString()}
+Descuento (${currentDiscount}%): -$${discountAmount.toLocaleString()}
+IVA (19%): $${tax.toLocaleString()}
+---------------------------------
+TOTAL: $${total.toLocaleString()}
+=================================
+
+    ¡Gracias por su compra!
+=================================`;
+
+            // Mostrar ticket en consola (en un sistema real se enviaría a impresora)
+            console.log(ticket);
+            
+            // Limpiar carrito
+            cart = [];
+            currentDiscount = 0;
+            document.getElementById('discountInput').value = '';
+            updateCartDisplay();
+            
+            showNotification(`Venta procesada exitosamente. Total: $${total.toLocaleString()}`, 'success');
+            
+            // En un sistema real, aquí se actualizaría el inventario
+            updateInventory();
+        }
+
+        // Simulación de actualización de inventario
+        function updateInventory() {
+            // En un sistema real, aquí se conectaría con la base de datos
+            // para actualizar las cantidades en stock
+            console.log('Inventario actualizado automáticamente');
+        }
+
+        // Mostrar notificación
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Funcionalidad adicional: Búsqueda rápida con teclado
+        document.addEventListener('keydown', function(event) {
+            // Accesos rápidos
+            if (event.ctrlKey) {
+                switch(event.key) {
+                    case '1':
+                        event.preventDefault();
+                        document.querySelector('[data-category="bebidas"]').click();
+                        break;
+                    case '2':
+                        event.preventDefault();
+                        document.querySelector('[data-category="galletas"]').click();
+                        break;
+                    case '3':
+                        event.preventDefault();
+                        document.querySelector('[data-category="lacteos"]').click();
+                        break;
+                    case '4':
+                        event.preventDefault();
+                        document.querySelector('[data-category="snacks"]').click();
+                        break;
+                    case '5':
+                        event.preventDefault();
+                        document.querySelector('[data-category="limpieza"]').click();
+                        break;
+                    case 'Enter':
+                        event.preventDefault();
+                        if (!document.getElementById('checkoutBtn').disabled) {
+                            checkout();
+                        }
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
