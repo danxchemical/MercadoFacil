@@ -11,10 +11,12 @@
         .header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .header-left h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 4px; }
         .header-left p { font-size: 0.875rem; opacity: 0.8; }
-        .header-right { display: flex; gap: 15px; }
+        .header-right { display: flex; gap: 15px; align-items: center; }
         .header-btn { padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
         .header-btn:hover { background: rgba(255,255,255,0.2); }
         .header-btn.active { background: #3b82f6; border-color: #3b82f6; }
+        .header-btn.danger { background: #ef4444; border-color: #ef4444; }
+        .header-btn.danger:hover { background: #dc2626; }
         .main-content { display: flex; flex: 1; overflow: hidden; }
         .content-area { flex: 1; display: flex; }
         .products-section { flex: 1; padding: 30px; overflow-y: auto; background: #fafbfc; }
@@ -71,7 +73,7 @@
         .empty-cart { text-align: center; padding: 40px 20px; color: #94a3b8; }
         .empty-cart-icon { font-size: 3rem; margin-bottom: 15px; opacity: 0.5; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-        .modal.show { display: flex; }
+        .modal.show { display: flex !important; }
         .modal-content { background: white; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
         .modal-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
         .modal-title { font-size: 1.25rem; font-weight: 600; color: #1e293b; }
@@ -102,6 +104,25 @@
         .category-card-name { font-weight: 600; color: #1e293b; margin-bottom: 8px; }
         .category-card-count { font-size: 0.875rem; color: #64748b; margin-bottom: 15px; }
         .category-actions { display: flex; gap: 8px; justify-content: center; }
+        .payment-modal .modal-content { max-width: 500px; }
+        .payment-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .payment-method { padding: 20px; border: 2px solid #e2e8f0; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .payment-method:hover { border-color: #3b82f6; background: #f0f9ff; }
+        .payment-method.selected { border-color: #3b82f6; background: #dbeafe; }
+        .payment-method-icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .payment-method-name { font-weight: 600; color: #1e293b; }
+        .cash-input-group { margin-bottom: 20px; }
+        .cash-display { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-top: 15px; }
+        .cash-display-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.95rem; }
+        .cash-display-row.change { border-top: 2px solid #e2e8f0; margin-top: 10px; padding-top: 15px; font-weight: 600; font-size: 1.1rem; color: #10b981; }
+        .qr-section { text-align: center; padding: 20px; }
+        .qr-code { max-width: 250px; margin: 0 auto 15px; border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px; background: white; }
+        .qr-code img { width: 100%; height: auto; }
+        .qr-instructions { font-size: 0.9rem; color: #64748b; margin-top: 10px; }
+        .sales-history-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .sales-history-table th { background: #f8fafc; padding: 12px; text-align: left; font-weight: 600; font-size: 0.875rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        .sales-history-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.875rem; }
+        .sales-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
     </style>
 </head>
 <body>
@@ -115,6 +136,7 @@
                 <button class="header-btn" id="inventoryBtn" onclick="showView('inventory')">📦 Inventario</button>
                 <button class="header-btn" id="categoriesBtn" onclick="showView('categories')">🏷️ Categorías</button>
                 <button class="header-btn active" id="salesBtn" onclick="showView('sales')">💰 Ventas</button>
+                <button class="header-btn danger" onclick="endDay()">📊 Finalizar Día</button>
             </div>
         </div>
 
@@ -207,6 +229,70 @@
         </div>
     </div>
 
+    <div class="modal payment-modal" id="paymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Procesar Pago</h3>
+                <button class="modal-close" onclick="closePaymentModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-methods">
+                    <div class="payment-method selected" onclick="selectPaymentMethod('cash')" id="cashMethod">
+                        <div class="payment-method-icon">💵</div>
+                        <div class="payment-method-name">Efectivo</div>
+                    </div>
+                    <div class="payment-method" onclick="selectPaymentMethod('qr')" id="qrMethod">
+                        <div class="payment-method-icon">📱</div>
+                        <div class="payment-method-name">QR (Nequi)</div>
+                    </div>
+                </div>
+
+                <div id="cashPaymentSection">
+                    <div class="cash-input-group">
+                        <label class="form-label">Total a Pagar</label>
+                        <input type="text" class="form-input" id="totalToPay" readonly style="background: #f8fafc; font-weight: 600; font-size: 1.1rem;">
+                    </div>
+                    <div class="cash-input-group">
+                        <label class="form-label">Dinero Recibido</label>
+                        <input type="number" class="form-input" id="cashReceived" placeholder="0" min="0" oninput="calculateChange()">
+                    </div>
+                    <div class="cash-display" id="changeDisplay" style="display: none;">
+                        <div class="cash-display-row">
+                            <span>Total:</span>
+                            <span id="displayTotal">$0</span>
+                        </div>
+                        <div class="cash-display-row">
+                            <span>Recibido:</span>
+                            <span id="displayReceived">$0</span>
+                        </div>
+                        <div class="cash-display-row change">
+                            <span>Cambio:</span>
+                            <span id="displayChange">$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="qrPaymentSection" style="display: none;">
+                    <div class="qr-section">
+                        <h4 style="margin-bottom: 15px; color: #1e293b;">Escanea el código QR</h4>
+                        <div class="qr-code">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=nequi://pagar?monto=0&concepto=MercadoFacil" alt="QR Nequi" id="qrImage">
+                        </div>
+                        <div class="qr-instructions">
+                            <p><strong>Total a pagar: <span id="qrTotal">$0</span></strong></p>
+                            <p style="margin-top: 10px;">Escanea con tu app de Nequi o banco</p>
+                            <p style="font-size: 0.85rem; margin-top: 8px; color: #94a3b8;">Una vez confirmado el pago, presiona "Confirmar Pago"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePaymentModal()">Cancelar</button>
+                <button class="btn btn-primary" id="confirmPaymentBtn" onclick="confirmPayment()">Confirmar Pago</button>
+            </div>
+        </div>
+    </div>
+
     <div class="notification" id="notification"></div>
 
     <script>
@@ -217,6 +303,9 @@
         let editingProductId = null;
         let nextProductId = 1;
         let nextCategoryId = 5;
+        let salesHistory = [];
+        let currentPaymentMethod = 'cash';
+        let currentSaleTotal = 0;
 
         document.addEventListener('DOMContentLoaded', () => updateAllViews());
 
@@ -550,6 +639,73 @@
             notif.className = `notification ${type}`;
             notif.classList.add('show');
             setTimeout(() => notif.classList.remove('show'), 3000);
+        }
+
+        function endDay() {
+            if (salesHistory.length === 0) {
+                showNotification('No hay ventas registradas hoy', 'warning');
+                return;
+            }
+            if (!confirm('¿Deseas finalizar el día y generar el reporte de ventas?')) return;
+            
+            const totalSales = salesHistory.reduce((sum, sale) => sum + sale.total, 0);
+            const totalCash = salesHistory.filter(s => s.paymentMethod === 'cash').reduce((sum, sale) => sum + sale.total, 0);
+            const totalQR = salesHistory.filter(s => s.paymentMethod === 'qr').reduce((sum, sale) => sum + sale.total, 0);
+            const totalDiscount = salesHistory.reduce((sum, sale) => sum + sale.discountAmount, 0);
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "REPORTE DE VENTAS DIARIAS - MERCADOFACIL\n";
+            csvContent += `Fecha: ${new Date().toLocaleDateString()}\n\n`;
+            csvContent += "RESUMEN\n";
+            csvContent += `Total Ventas,${salesHistory.length}\n`;
+            csvContent += `Total Ingresos,${totalSales.toLocaleString()}\n`;
+            csvContent += `Ventas Efectivo,${totalCash.toLocaleString()}\n`;
+            csvContent += `Ventas QR,${totalQR.toLocaleString()}\n`;
+            csvContent += `Total Descuentos,${totalDiscount.toLocaleString()}\n\n`;
+            
+            csvContent += "DETALLE DE VENTAS\n";
+            csvContent += "ID Venta,Fecha,Hora,Productos,Subtotal,Descuento,IVA,Total,Metodo Pago,Recibido,Cambio\n";
+            
+            salesHistory.forEach(sale => {
+                const dateObj = new Date(sale.date);
+                const fecha = dateObj.toLocaleDateString();
+                const hora = dateObj.toLocaleTimeString();
+                const productos = sale.items.map(item => `${item.name} x${item.quantity}`).join('; ');
+                csvContent += `${sale.id},${fecha},${hora},"${productos}",${sale.subtotal},${sale.discountAmount},${sale.tax},${sale.total},${sale.paymentMethod === 'cash' ? 'Efectivo' : 'QR'},${sale.cashReceived},${sale.change}\n`;
+            });
+            
+            csvContent += "\nPRODUCTOS VENDIDOS\n";
+            csvContent += "Producto,Cantidad Total,Ingresos\n";
+            const productSales = {};
+            salesHistory.forEach(sale => {
+                sale.items.forEach(item => {
+                    if (!productSales[item.name]) {
+                        productSales[item.name] = { quantity: 0, revenue: 0 };
+                    }
+                    productSales[item.name].quantity += item.quantity;
+                    productSales[item.name].revenue += item.price * item.quantity;
+                });
+            });
+            
+            Object.keys(productSales).forEach(productName => {
+                const data = productSales[productName];
+                csvContent += `${productName},${data.quantity},${data.revenue}\n`;
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Reporte_Ventas_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification(`Reporte generado: ${salesHistory.length} ventas, Total: ${totalSales.toLocaleString()}`);
+            
+            if (confirm('¿Deseas limpiar el historial de ventas de hoy?')) {
+                salesHistory = [];
+                showNotification('Historial limpiado. Listo para un nuevo día');
+            }
         }
     </script>
 </body>
